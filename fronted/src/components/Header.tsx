@@ -116,25 +116,21 @@ const Header = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Wifi className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
                       {language === 'zh-TW' ? '網路連線' : 'Network'}
                     </span>
                   </div>
                   <div className={`flex items-center gap-1.5 ${networkConfig.color}`}>
-                    {networkConfig.icon}
                     <span className="text-sm">{networkConfig.text}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Server className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
                       {language === 'zh-TW' ? '伺服器狀態' : 'Server'}
                     </span>
                   </div>
                   <div className={`flex items-center gap-1.5 ${serverConfig.color}`}>
-                    {serverConfig.icon}
                     <span className="text-sm">{serverConfig.text}</span>
                   </div>
                 </div>
