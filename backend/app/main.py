@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi. staticfiles import StaticFiles
+from fastapi.staticfiles import StaticFiles
 import os
 from pathlib import Path
 
@@ -13,13 +13,18 @@ for folder in ['uploads', 'contracts', 'reports']:
 app = FastAPI(
     title="外籍勞工契約審查系統 API",
     description="上傳契約圖片/PDF，自動進行 OCR 和法規分析",
-    version="1. 0.0"
+    version="1.0.0"
 )
 
-# CORS 設定
+# 🎯 修改 CORS 設定 - 允許多個來源
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",  # Vite 預設
+        "http://localhost:8080",  # 你目前使用的埠號
+        "http://localhost:3000",  # 備用
+        "http://127.0.0.1:8080",  # 備用
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -49,5 +54,5 @@ if __name__ == "__main__":
         app, 
         host="0.0.0.0", 
         port=8000, 
-        timeout_keep_alive=300  # 🔧 增加超時時間到 5 分鐘
+        timeout_keep_alive=300
     )

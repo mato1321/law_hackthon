@@ -68,7 +68,7 @@ async def upload_contract(file: UploadFile = File(... )) -> Dict:
         report_content = await analysis_service. get_report_content(report_path)
         
         # 步驟 6: 複製報告到 backend/reports 資料夾
-        final_report_filename = f"report-{timestamp}. txt"
+        final_report_filename = f"report-{timestamp}.txt"
         final_report_path = Path("reports") / final_report_filename
         shutil.copy2(report_path, final_report_path)
         
@@ -82,7 +82,7 @@ async def upload_contract(file: UploadFile = File(... )) -> Dict:
             "data": {
                 "report_id": final_report_filename. replace('. txt', ''),
                 "extracted_text_length": len(extracted_text),
-                "report_preview": report_content[:500] + ".. .",
+                "report_preview": report_content,
                 "download_url": f"/api/contracts/download/{final_report_filename}"
             }
         }
