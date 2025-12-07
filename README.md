@@ -61,15 +61,31 @@ npm run dev
 ## 專案結構
 
 ```
-fronted/
-├── src/                # 原始碼目錄
-├── public/             # 靜態資源
-├── package.json        # 專案配置與依賴
-├── vite.config.ts      # Vite 配置
-├── tailwind.config.js  # Tailwind CSS 配置
-├── tsconfig. json       # TypeScript 配置
-└── postcss.config.js   # PostCSS 配置
-```
+law_hackthon/
+├── fronted/              # React 前端
+├── backend/              # FastAPI 後端
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py           # FastAPI 主程式
+│   │   ├── routes/
+│   │   │   └── contract.py   # API 路由
+│   │   ├── services/
+│   │   │   ├── ocr_service.py      # OCR 服務
+│   │   │   └── analysis_service.py # 呼叫 AI 模組
+│   │   └── utils/
+│   │       └── file_handler.py
+│   ├── uploads/          # 暫存上傳檔案
+│   ├── contracts/        # 提取的文字檔
+│   ├── reports/          # 生成的報告
+│   ├── requirements.txt
+│   └── . env
+├── AI/                   # 🎯 AI 分析模組（獨立）
+│   ├── law_main.py       # 你的分析引擎
+│   ├── documents/        # 法規知識庫
+│   ├── contracts/        # AI 讀取契約的地方
+│   ├── lawvector_db/     # 向量資料庫
+│   └── requirements.txt
+└── README.md```
 
 ## 建構生產版本
 

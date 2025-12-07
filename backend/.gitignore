@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*. py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.env
+ENV/
+.venv/
+
+# 上傳和暫存檔案
+uploads/
+contracts/
+reports/
+*.txt
+! requirements.txt
+
+# 環境變數
+.env
+. env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日誌
+*.log
+
+# 測試
+. pytest_cache/
+.coverage
+htmlcov/
+
+# 資料庫
+*.db
+*. sqlite3
