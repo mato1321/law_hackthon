@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi. staticfiles import StaticFiles
 import os
 from pathlib import Path
 
@@ -13,19 +13,19 @@ for folder in ['uploads', 'contracts', 'reports']:
 app = FastAPI(
     title="外籍勞工契約審查系統 API",
     description="上傳契約圖片/PDF，自動進行 OCR 和法規分析",
-    version="1.0.0"
+    version="1. 0.0"
 )
 
-# CORS 設定（讓前端可以呼叫）
+# CORS 設定
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite 開發伺服器
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 靜態檔案服務（用於下載報告）
+# 靜態檔案服務
 app.mount("/reports", StaticFiles(directory="reports"), name="reports")
 
 # 註冊路由
@@ -39,10 +39,15 @@ async def root():
         "status": "running"
     }
 
-@app. get("/health")
+@app.get("/health")
 async def health_check():
     return {"status": "ok"}
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=8000, 
+        timeout_keep_alive=300  # 🔧 增加超時時間到 5 分鐘
+    )

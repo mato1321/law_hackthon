@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 import time
 import torch
 from typing import List, Dict, Any
@@ -252,9 +253,16 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
         except Exception as e:
             return {"Failed ": f"{e}"}
         
+        # 🎯 限制契約長度，避免超過 token 限制
+        max_chars = 2000
+        if len(contract_content) > max_chars:
+            print(f"⚠️ 契約過長 ({len(contract_content)} 字元)，截斷至 {max_chars} 字元")
+            contract_content = contract_content[:max_chars]
+
+
 
         review_questions = [                                        # 構造審查問題(可新增更多角度最多五個)
-            """
+            f"""
                 你是台灣勞動法專家，請審查以下外籍勞工契約。
 
                 【契約內容】
@@ -281,11 +289,8 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
 
                 只根據契約實際內容回答，不要推測。,
             """
-            f"請根據台灣勞動法規，審查以下外籍勞工契約是否合法合規：\n\n{contract_content[:1000]}...\n\n請特別檢查：\n1.工資是否符合最低工資標準\n2.工時是否符合勞基法規定\n3.休假制度是否完整\n4.是否有不合理的違約金條款",
-            
-            f"這份契約中是否存在對勞工不利的條款？請列舉具體條款並說明問題所在：\n\n{contract_content}",
-            
-            f"根據《就業服務法》和《勞動基準法》，評估此契約的合規性：\n\n{contract_content}"
+            "請列出此契約中對勞工不利的條款。",
+            "請評估此契約是否符合勞基法。"
         ]
         results = {
             "contract_path": contract_path,
@@ -415,12 +420,26 @@ def main():
         if not system.load_existing_knowledge_base():  # 建立法規知識庫
             system.build_law_knowledge_base()
         print("開始審查契約")
-        results = system.batch_review_contracts()
 
-        if results:  # 生成報告
-            system.generate_review_report(results, "report.txt")
-            print("Successful！報告已保存至: report.txt")
-            print(f"共審查 {len(results)} 份契約")
+        if len(sys.argv) > 1:  # 單一檔案模式
+            contract_file = sys.argv[1]
+            print(f"處理單一契約: {contract_file}")
+            if not os.path.exists(contract_file):
+                print(f"Failed: {contract_file}")
+                sys.exit(1)
+            result = system.review_contract(contract_file)
+            system.generate_review_report([result], "report.txt")
+            print("Successful！")
+            
+        else:  # 批次處理模式
+            results = system.batch_review_contracts()
+            if results:
+                system.generate_review_report(results, "report.txt")
+                print("Successful！")
+                print(f"共審查 {len(results)} 份契約")
+            else:
+                print("Failed")
+                sys.exit(1)
     except Exception as e:
         print(f"\nFailed: {e}")
         import traceback
