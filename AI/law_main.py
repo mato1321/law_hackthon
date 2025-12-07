@@ -253,44 +253,28 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
         except Exception as e:
             return {"Failed ": f"{e}"}
         
-        # 🎯 限制契約長度，避免超過 token 限制
-        max_chars = 2000
-        if len(contract_content) > max_chars:
-            print(f"⚠️ 契約過長 ({len(contract_content)} 字元)，截斷至 {max_chars} 字元")
-            contract_content = contract_content[:max_chars]
+        review_questions = [          # 構造審查問題(可新增更多角度最多五個)
+            f"""請審查此勞工契約並按以下格式回答：
 
-
-
-        review_questions = [                                        # 構造審查問題(可新增更多角度最多五個)
-            f"""
-                你是台灣勞動法專家，請審查以下外籍勞工契約。
-
-                【契約內容】
+                契約內容：
                 {contract_content}
 
-                【審查任務】
-                請逐項檢查並以此格式回答：
+                請按此格式回答：
 
-                合法項目
-                - [列出符合法規的條款]
+                【違法項目】
+                - 項目1：說明
+                - 項目2：說明
 
-                違法項目
-                - [列出違法條款，格式：違法內容 | 違反法條 | 罰則]
+                【建議修改】
+                - 建議1
+                - 建議2
 
-                建議修改
-                - [列出需改進的條款]
+                【參考法條】
+                - 法條1
+                - 法條2
 
-                重點檢查：
-                1. 工資是否 ≥ 27,470元
-                2. 工時是否 ≤ 8小時/日、40小時/週
-                3. 休假是否符合每週至少1日
-                4. 違約金是否合理
-                5. 是否投保勞健保
-
-                只根據契約實際內容回答，不要推測。,
+                只回答上述格式，簡短扼要。
             """
-            "請列出此契約中對勞工不利的條款。",
-            "請評估此契約是否符合勞基法。"
         ]
         results = {
             "contract_path": contract_path,
