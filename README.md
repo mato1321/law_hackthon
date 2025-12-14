@@ -94,12 +94,12 @@ python -m venv venv
 
 ### 3. 啟動虛擬環境
 
-## Windows:
+#### Windows:
 ```bash
 venv\Scripts\activate
 ```
 
-# macOS/Linux:
+#### macOS/Linux:
 ```bash
 source venv/bin/activate
 ```
