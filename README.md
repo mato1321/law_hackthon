@@ -104,6 +104,17 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
+#### 4. 安裝依賴套件
+```bash
+pip install -r requirements.txt
+```
+
+#### 5. 啟動後端伺服器
+
+##### Windows:
+```bash
+python app/main.py
+```
 
 
 ## 專案結構
