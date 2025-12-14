@@ -3,6 +3,8 @@ import Header from '@/components/Header';
 import FileUpload from '@/components/FileUpload';
 import AnalysisProgress from '@/components/AnalysisProgress';
 import BeautifulReportSection from '@/components/BeautifulReportSection';
+import KnowledgeBase from '@/components/KnowledgeBase'; // 👈 添加這一行
+import ComplaintHotline from '@/components/ComplaintHotline'; // 👈 保留這一行
 import { uploadContract, type StructuredReport } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -39,12 +41,12 @@ const Index = () => {
       
       toast({
         title: "分析完成",
-        description:   `已提取 ${result.data.extracted_text_length} 個字元`,
+        description:     `已提取 ${result.data.extracted_text_length} 個字元`,
       });
       
       handleAnalysisComplete();
       
-    } catch (error:   any) {
+    } catch (error:     any) {
       console.error('❌ 上傳失敗:', error);
       
       toast({
@@ -84,9 +86,13 @@ const Index = () => {
         isVisible={showReport}
         reportData={reportData}
       />
+
+      {/* 👇 添加知識庫和申訴管道按鈕 */}
+      <KnowledgeBase />
+      <ComplaintHotline />
       
       <footer className="py-8 text-center text-muted-foreground text-sm border-t border-border">
-        <p>© 2025 FLAS (Foreign Labor Audit System). All rights reserved.</p>
+        <p>© 2025 FLAS (Foreign Labor Audit System).All rights reserved.</p>
       </footer>
     </main>
   );
