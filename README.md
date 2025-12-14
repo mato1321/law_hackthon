@@ -1,33 +1,65 @@
-# Foreign Labor Audit System
+# Foreign Labor Audit System (FLAS)
 
-外籍勞工稽查系統 - 前端應用程式
+外籍勞工法規稽查系統 - 智能合約分析平台
+
+## 🎯 專案概述
+
+FLAS 是一個全棧 Web 應用，專門用於分析外籍勞工聘僱契約並檢查其法規符合度。結合 OCR、AI 和向量資料庫技術，為用戶提供詳細的契約審查報告。
+
+### 主要功能
+
+**契約文件上傳** - 支援 PDF、JPG、PNG 格式  
+**OCR 文字提取** - 自動提取契約內容  
+**AI 智能分析** - 基於RAG的契約內容分析  
+**法規符合度檢查** - 檢查是否符合相關法規  
+**實時進度追蹤** - 顯示分析進度  
+**多語言支援** - 繁體中文、英文、印尼文、越南文、菲律賓文、泰文  
+**報告生成與下載** - 生成 PDF 報告並支援下載  
 
 ## 技術棧
 
+### 前端
 - **框架**: React 18
-- **建構工具**: Vite
+- **建構工具**: Vite 5
 - **程式語言**: TypeScript
-- **樣式**: Tailwind CSS
+- **樣式**:  Tailwind CSS
 - **UI 元件庫**: shadcn/ui (Radix UI)
-- **狀態管理**: TanStack React Query
+- **PDF 生成**: html2pdf. js
 - **路由**: React Router DOM
-- **表單處理**: React Hook Form + Zod
-- **圖表**: Recharts
+- **狀態管理**:  React Context API
+- **圖示**: lucide-react
+
+### 後端
+- **框架**:  FastAPI (Python)
+- **非同步支援**: asyncio
+- **API 路由**: APIRouter
+- **OCR 服務**: 集成 OCR 服務
+- **AI 分析**: 自定義 AI 分析模組
+
+### AI 模組
+- **向量資料庫**: lawvector_db
+- **法規知識庫**: 法律條款向量化存儲
+- **分析引擎**: 自訂分析邏輯
 
 ## 系統需求
 
-- Node. js 18. x 或更高版本
+### 前端
+- Node.js 18.x 或更高版本
 - npm 9.x 或更高版本
+
+### 後端
+- Python 3.11 或更高版本
+- pip 套件管理器
 
 ## 快速開始
 
-### 1. 複製專案
+### 前端設置
 
+#### 1. 複製專案
 ```bash
 git clone https://github.com/mato1321/law_hackthon.git
 cd law_hackthon
 ```
-
 ### 2. 進入前端資料夾
 
 ```bash
@@ -48,15 +80,31 @@ npm run dev
 
 開發伺服器將在 `http://localhost:5173` 啟動。
 
-## 可用指令
+## 後端設置
 
-| 指令 | 說明 |
-|------|------|
-| `npm run dev` | 啟動開發伺服器（支援熱更新） |
-| `npm run build` | 建構生產版本 |
-| `npm run build:dev` | 建構開發版本 |
-| `npm run preview` | 預覽建構後的版本 |
-| `npm run lint` | 執行 ESLint 程式碼檢查 |
+### 1. 進入後端資料夾
+```bash
+cd backend
+```
+
+### 2. 建立虛擬環境
+```bash
+python -m venv venv
+```
+
+### 3. 啟動虛擬環境
+
+## Windows:
+```bash
+venv\Scripts\activate
+```
+
+## macOS/Linux::
+```bash
+source venv/bin/activate
+```
+
+
 
 ## 專案結構
 
