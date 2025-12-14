@@ -87,7 +87,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
                 max_output_tokens=2048,
                 convert_system_message_to_human=True  
             )
-            print(f"Gemini API 連接成功 (模型: {self.config. GEMINI_MODEL_NAME})\n")
+            print(f"Gemini API 連接成功 (模型: {self.config.GEMINI_MODEL_NAME})\n")
             
         except Exception as e: 
             print(f"載入 Gemini API 失敗: {e}")
@@ -292,22 +292,22 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
 
                 ---
                 【違規項目 1】
-                1. 違法條款原文：(請直接複製合約中違法的那一句話)
-                2. 違反法規：(請精確指出法條，例如：違反《就業服務法》第57條第8款)
-                3. 違法原因：(請簡述為何違法，例如：雇主不得非法扣留受僱人之護照或居留證)
-                4. 修改建議：(請撰寫一段合法的替代條文，或註明「應直接刪除」)
+                1.違法條款原文：(請直接複製合約中違法的那一句話)
+                2.違反法規：(請精確指出法條，例如：違反《就業服務法》第57條第8款)
+                3.違法原因：(請簡述為何違法，例如：雇主不得非法扣留受僱人之護照或居留證)
+                4.修改建議：(請撰寫一段合法的替代條文，或註明「應直接刪除」)
 
                 【違規項目 2】
-                1. 違法條款原文：...
-                2. 違反法規：...
-                3. 違法原因：...
-                4. 修改建議：...
+                1.違法條款原文：...
+                2.違反法規：...
+                3.違法原因：...
+                4.修改建議：...
                 ---
 
                 注意事項：
-                1. 請特別檢查「扣留證件」、「指派許可外工作」、「薪資低於基本工資(NT$28,590)」、「超時工作」及「不法扣款」等項目。
-                2. 法律引用必須精確，不要模糊帶過。
-                3. 修改建議必須符合台灣現行法律標準。
+                1.請特別檢查「扣留證件」、「指派許可外工作」、「薪資低於基本工資(NT$28,590)」、「超時工作」及「不法扣款」等項目。
+                2.法律引用必須精確，不要模糊帶過。
+                3.修改建議必須符合台灣現行法律標準。
             """
         ]
         results = {
@@ -394,7 +394,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write("="*80 + "\n")
             f.write("外籍勞工聘僱契約審查報告\n")
-            f.write(f"審查日期：{time. strftime('%Y年%m月%d日')}\n")
+            f.write(f"審查日期：{time.strftime('%Y年%m月%d日')}\n")
             f.write("="*80 + "\n\n")
             for contract_idx, result in enumerate(results, 1):
                 if 'error' in result:
@@ -419,7 +419,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
                         content = law['content']
                         if len(content) > 300:
                             content = content[:300] + "..."
-                        f.write(f"{law_idx}. {content}\n")
+                        f.write(f"{law_idx}.{content}\n")
                         f.write(f"來源: {law['source']}\n\n")
         print(f"報告已保存至: {output_path}\n")
         
@@ -433,14 +433,15 @@ def main():
             system.build_law_knowledge_base()
         print("開始審查契約")
 
-        if len(sys.argv) > 1:  # 單一檔案模式
+        if len(sys.argv) > 1:   # 單一檔案模式
             contract_file = sys.argv[1]
-            print(f"處理單一契約: {contract_file}")
+            language = sys.argv[2] if len(sys.argv) > 2 else 'zh-TW'  # 🎯 接收語言參數
+            print(f"處理單一契約: {contract_file}, 語言: {language}")
             if not os.path.exists(contract_file):
-                print(f"Failed: {contract_file}")
+                print(f"Failed:  {contract_file}")
                 sys.exit(1)
             result = system.review_contract(contract_file)
-            system.generate_review_report([result], "report.txt")
+            system.generate_review_report([result], "report.txt")  # 目前仍為中文，後續可擴展
             print("Successful！")
             
         else:  # 批次處理模式
