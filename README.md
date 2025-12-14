@@ -198,11 +198,12 @@ law_hackthon/
 │   └── venv/                          # Python 虛擬環境
 │
 └── README.md
+```
 
 # 貢獻指南
 
 歡迎提交 Issue 和 Pull Request！
 
-## 授權
+# 授權
 
 MIT License
