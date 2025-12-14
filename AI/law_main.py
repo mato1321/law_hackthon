@@ -2,25 +2,33 @@ import os
 import json
 import sys
 import time
-import torch
+# import torch  # 註解掉，改用 API 就不需要了
 from typing import List, Dict, Any
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_chroma import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.llms import HuggingFacePipeline
+# from langchain_community.llms import HuggingFacePipeline  # 註解掉本地模型
 from langchain_classic.chains import RetrievalQA
 from langchain_core.documents import Document
-from transformers import (
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    pipeline,
-)
+# from transformers import (  # 註解掉，不再需要本地載入模型
+#     AutoTokenizer,
+#     AutoModelForCausalLM,
+#     pipeline,
+# )
+
+# 🎯 新增：使用 Gemini API
+from langchain_google_genai import ChatGoogleGenerativeAI
+from dotenv import load_dotenv
+
+# 載入環境變數
+load_dotenv()
 
 os.environ["HF_HUB_DOWNLOAD_TIMEOUT"] = "7200"  
 os.environ["CURL_CA_BUNDLE"] = ""              # 測試時使用
 os.environ["TOKENIZERS_PARALLELISM"] = "false" # 單執行緒
+
 class Config:
     DOCUMENTS_DIR = "documents"                # 法規知識庫
     CONTRACTS_DIR = "contracts"                # 契約文件
@@ -28,10 +36,15 @@ class Config:
     CHUNK_SIZE = 800                           # 把法條切塊
     CHUNK_OVERLAP = 100                        # 避免語意不連續
     EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
-    LLM_MODEL_NAME = "yentinglin/Taiwan-LLM-7B-v2.1-chat"
+    # LLM_MODEL_NAME = "yentinglin/Taiwan-LLM-7B-v2.1-chat"  # 註解掉本地模型
+    
+    # 🎯 新增：Gemini API 設定
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-pro")
+    
     VECTOR_DB_DIR = "lawvector_db"             # 向量庫位置
     TOP_K = 5                                  # 找出幾條相關的
-    USE_4BIT_QUANTIZATION = False              # 要不要量化
+    # USE_4BIT_QUANTIZATION = False            # 註解掉，API 不需要量化
 
 class LaborContractReviewSystem:               # 外籍勞工契約審查
     def __init__(self, config: Config):
@@ -53,7 +66,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
                 self.embeddings = HuggingFaceEmbeddings(
                     model_name=self.config.EMBEDDING_MODEL_NAME,
                     model_kwargs={
-                        'device': 'cuda' if torch.cuda.is_available() else 'cpu',
+                        'device': 'cpu',  # Embedding 模型用 CPU 就好
                         'trust_remote_code': True  
                     },
                     encode_kwargs={
@@ -62,57 +75,78 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
                     }
                 )
                 break
-            except Exception as e:
-                print(f"Failed: {e}")
+            except Exception as e: 
+                print(f"Failed:  {e}")
                 if attempt < max_retries - 1:
                     time.sleep(5)
                 else:
                     raise
         print("Successful\n")
     
+    # 🎯 修改：改用 Gemini API
     def _init_llm(self):
-        print(f"載入LLM")
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                tokenizer = AutoTokenizer.from_pretrained(
-                    self.config.LLM_MODEL_NAME,
-                    trust_remote_code=True,
-                    resume_download=True
-                )
-                if tokenizer.pad_token is None:  #方便批次處理
-                    tokenizer.pad_token = tokenizer.eos_token
-                model = AutoModelForCausalLM.from_pretrained(
-                    self.config.LLM_MODEL_NAME,
-                    device_map="auto",
-                    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-                    trust_remote_code=True,  # 允許模型用他們自己的Python code
-                    resume_download=True     # 下載中斷，會從斷點續傳 
-                )
-                pipe = pipeline(
-                    "text-generation",
-                    model=model,
-                    tokenizer=tokenizer,
-                    max_new_tokens=1200,  
-                    temperature=0.5,         # 降低預測文字的隨機性
-                    repetition_penalty=1.3,  # 降低重複字詞
-                    do_sample=True,          # 要不要進行多項式採樣
-                    top_p=0.9,              # 控制生成文本多樣性
-                    pad_token_id=tokenizer.pad_token_id,
-                    eos_token_id=tokenizer.eos_token_id,
-                )
-                self.llm = HuggingFacePipeline(pipeline=pipe)
-                break  
-            except Exception as e:
-                print(f"失敗: {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(5)
-                else:
-                    raise
-        if torch.cuda.is_available():
-            allocated = torch.cuda.memory_allocated(0) / 1024**3
-            print(f"GPU 顯存使用: {allocated:.2f} GB\n")
-        print("Successful\n")
+        print(f"載入 Gemini LLM API")
+        try:
+            if not self.config.GEMINI_API_KEY:
+                raise ValueError("請在 .env 檔案中設定 GEMINI_API_KEY")
+            
+            self.llm = ChatGoogleGenerativeAI(
+                model=self.config.GEMINI_MODEL_NAME,
+                google_api_key=self.config.GEMINI_API_KEY,
+                temperature=0.5,
+                max_output_tokens=2048,
+                convert_system_message_to_human=True  # Gemini 需要這個設定
+            )
+            print("Gemini API 連接成功\n")
+            
+        except Exception as e: 
+            print(f"載入 Gemini API 失敗: {e}")
+            raise
+    
+    # # 註解掉原本的本地模型載入方法
+    # def _init_llm(self):
+    #     print(f"載入LLM")
+    #     max_retries = 3
+    #     for attempt in range(max_retries):
+    #         try:
+    #             tokenizer = AutoTokenizer.from_pretrained(
+    #                 self.config.LLM_MODEL_NAME,
+    #                 trust_remote_code=True,
+    #                 resume_download=True
+    #             )
+    #             if tokenizer.pad_token is None:  #方便批次處理
+    #                 tokenizer.pad_token = tokenizer.eos_token
+    #             model = AutoModelForCausalLM.from_pretrained(
+    #                 self.config.LLM_MODEL_NAME,
+    #                 device_map="auto",
+    #                 torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+    #                 trust_remote_code=True,  # 允許模型用他們自己的Python code
+    #                 resume_download=True     # 下載中斷，會從斷點續傳 
+    #             )
+    #             pipe = pipeline(
+    #                 "text-generation",
+    #                 model=model,
+    #                 tokenizer=tokenizer,
+    #                 max_new_tokens=1200,  
+    #                 temperature=0.5,         # 降低預測文字的隨機性
+    #                 repetition_penalty=1.3,  # 降低重複字詞
+    #                 do_sample=True,          # 要不要進行多項式採樣
+    #                 top_p=0.9,              # 控制生成文本多樣性
+    #                 pad_token_id=tokenizer.pad_token_id,
+    #                 eos_token_id=tokenizer.eos_token_id,
+    #             )
+    #             self.llm = HuggingFacePipeline(pipeline=pipe)
+    #             break  
+    #         except Exception as e: 
+    #             print(f"失敗: {e}")
+    #             if attempt < max_retries - 1:
+    #                 time.sleep(5)
+    #             else:
+    #                 raise
+    #     if torch.cuda.is_available():
+    #         allocated = torch.cuda.memory_allocated(0) / 1024**3
+    #         print(f"GPU 顯存使用:  {allocated:.2f} GB\n")
+    #     print("Successful\n")
     
     def load_law_json(self) -> List[Document]:
         print(f"載入JSON")
@@ -125,7 +159,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
 
         for json_path in json_files:
             try:
-                print(f"正在讀取: {json_path.name}")
+                print(f"正在讀取:  {json_path.name}")
                 with open(json_path, 'r', encoding='utf-8') as f:
                     law_data = json.load(f)
                 if isinstance(law_data, list):
@@ -148,7 +182,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
                                 doc = Document(
                                     page_content=content,
                                     metadata={
-                                        "source": json_path.name, 
+                                        "source":  json_path.name, 
                                         "law_name": law_name,
                                         "type": "labor_law"
                                     }
@@ -164,13 +198,13 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
         if 'instruction' in item and 'input' in item:
             parts.append(f"【問題】{item['instruction']}")
             parts.append(f"【法規依據】{item['input']}")
-            if 'output' in item:
+            if 'output' in item: 
                 parts.append(f"【說明】{item['output']}")
             return '\n'.join(parts)
         if '法規名稱' in item:
             parts.append(f"【{item['法規名稱']}】")
         if '條號' in item:
-            parts. append(f"第 {item['條號']} 條")
+            parts.append(f"第 {item['條號']} 條")
         if '條文內容' in item:
             parts.append(item['條文內容'])
         if '說明' in item:
@@ -302,7 +336,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
                 unique_law_set = set() 
                 for doc in result.get("source_documents", []):
                     law_info = {
-                        "content": doc.page_content[:300],
+                        "content": doc.page_content[: 300],
                         "source": doc.metadata.get("source", "Unknown"),
                         "metadata": doc.metadata
                     }
@@ -316,7 +350,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
             except Exception as e:
                 print(f"Failed: {e}\n")
                 results["reviews"].append({
-                    "question_type": f"審查角度 {idx}",
+                    "question_type":  f"審查角度 {idx}",
                     "error": str(e)
                 })
         return results
@@ -349,7 +383,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
 
         all_results = []
         for idx, contract_file in enumerate(contract_files, 1):
-            print(f"審查進度: {idx}/{len(contract_files)}")            
+            print(f"審查進度:  {idx}/{len(contract_files)}")            
             result = self.review_contract(str(contract_file))
             all_results.append(result)
 
@@ -361,7 +395,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
         
         with open(output_path, 'w', encoding='utf-8') as f:
             # ========== 標題 ==========
-            f. write("外籍勞工聘僱契約審查報告\n")
+            f.write("外籍勞工聘僱契約審查報告\n")
             f.write(f"{time.strftime('%Y/%m/%d')}\n\n")
             
             # ========== 簡介 ==========
@@ -372,7 +406,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
             # ========== 處理每份契約 ==========
             for contract_idx, result in enumerate(results, 1):
                 if 'error' in result:
-                    f.write(f"契約 {contract_idx} 分析失敗: {result['error']}\n\n")
+                    f.write(f"契約 {contract_idx} 分析失敗:  {result['error']}\n\n")
                     continue
                 
                 # ========== 發現事項 ==========
@@ -391,11 +425,11 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
                 findings = [
                     {
                         "title": "工資條款審查",
-                        "content": self._extract_wage_info(combined_analysis)
+                        "content":  self._extract_wage_info(combined_analysis)
                     },
                     {
                         "title": "工時規定審查",
-                        "content": self._extract_worktime_info(combined_analysis)
+                        "content":  self._extract_worktime_info(combined_analysis)
                     },
                     {
                         "title": "休假規定審查",
@@ -424,7 +458,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
                 ]
                 
                 for idx, rec in enumerate(recommendations, 1):
-                    f.write(f"{idx}. {rec}\n")
+                    f.write(f"{idx}.{rec}\n")
                 
                 f.write("\n")
                 
@@ -437,22 +471,22 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
                 violation_count = min(violation_count, 3)  # 最多3項
                 
                 f.write(f"綜上所述，該聘僱契約存在{violation_count}項重大違規事項及{len(recommendations)}項建議改善事項。")
-                f. write("建議雇主於簽訂契約前進行修正，以確保符合勞動法規並保障勞工權益。\n\n")
+                f.write("建議雇主於簽訂契約前進行修正，以確保符合勞動法規並保障勞工權益。\n\n")
                 
                 # ========== 參考法規（可選） ==========
                 if result.get('related_laws'):
                     f.write("\n" + "="*80 + "\n")
                     f.write("參考法規條文\n")
-                    f. write("="*80 + "\n\n")
+                    f.write("="*80 + "\n\n")
                     
-                    for law_idx, law in enumerate(result. get('related_laws', [])[:5], 1):  # 只顯示前5條
+                    for law_idx, law in enumerate(result.get('related_laws', [])[:5], 1):  # 只顯示前5條
                         content = law['content']
                         if len(content) > 200:
-                            content = content[:200] + "..."
-                        f.write(f"{law_idx}. {content}\n")
-                        f.write(f"   來源: {law['source']}\n\n")
+                            content = content[: 200] + "..."
+                        f.write(f"{law_idx}.{content}\n")
+                        f.write(f"   來源:  {law['source']}\n\n")
         
-        print(f"報告已保存至: {output_path}\n")
+        print(f"報告已保存至:  {output_path}\n")
 
 
     def _extract_wage_info(self, text: str) -> str:
@@ -461,7 +495,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
             # 嘗試找出工資相關段落
             lines = text.split('\n')
             for line in lines:
-                if '工資' in line or '薪資' in line:
+                if '工資' in line or '薪資' in line: 
                     return line.strip()
             return "契約中有提及工資條款，請確認是否符合最低工資標準（每月27,470元）。"
         return "未明確發現工資相關問題，建議仍需確認是否符合基本工資標準。"
@@ -472,7 +506,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
         if '工時' in text or '工作時間' in text or '加班' in text:
             lines = text.split('\n')
             for line in lines:
-                if '工時' in line or '工作時間' in line or '加班' in line:
+                if '工時' in line or '工作時間' in line or '加班' in line: 
                     return line.strip()
             return "契約中有提及工時規定，請確認是否符合每日8小時、每週40小時的標準。"
         return "未明確發現工時相關問題，建議確認工時及加班費計算方式是否明確。"
@@ -483,7 +517,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
         if '休假' in text or '例假' in text or '休息' in text:
             lines = text.split('\n')
             for line in lines:
-                if '休假' in line or '例假' in line:
+                if '休假' in line or '例假' in line: 
                     return line.strip()
             return "契約中有提及休假規定，請確認是否符合每七日應有兩日休息的規定。"
         return "未明確發現休假相關問題，建議確認休假制度是否完整。"
@@ -492,7 +526,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
     def _extract_other_info(self, text: str) -> str:
         """提取其他重要資訊"""
         keywords = ['違約金', '膳宿', '保險', '勞健保']
-        for keyword in keywords:
+        for keyword in keywords: 
             if keyword in text:
                 lines = text.split('\n')
                 for line in lines:
@@ -533,5 +567,6 @@ def main():
         print(f"\nFailed: {e}")
         import traceback
         traceback.print_exc()
-if __name__ == "__main__":
+        
+if __name__ == "__main__": 
     main()
