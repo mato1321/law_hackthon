@@ -113,56 +113,95 @@ pip install -r requirements.txt
 
 ##### Windows:
 ```bash
-python app/main.py
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+後端伺服器將在 http://localhost:8000 啟動。
+
+### AI 模組設置
+
+#### 1. 進入 AI 資料夾
+```bash
+cd AI
+```
+#### 2. 建立虛擬環境
+
+```bash
+python -m venv venv
+```
+#### 3. 啟動虛擬環境
+
+##### Windows:
+```bash
+venv\Scripts\activate
 ```
 
+##### macOS/Linux:
+```bash
+source venv/bin/activate
+```
+#### 4. 安裝依賴套件
+```bash
+pip install -r requirements.txt
+```
 
 ## 專案結構
 
 ```
 law_hackthon/
-├── fronted/              # React 前端
-├── backend/              # FastAPI 後端
+├── fronted/                           # React 前端應用
+│   ├── public/
+│   ├── src/
+│   │   ├── components/                # React 元件
+│   │   │   ├── Header.tsx             # 頁面頭部
+│   │   │   ├── FileUpload.tsx         # 檔案上傳
+│   │   │   ├── AnalysisProgress.tsx   # 分析進度
+│   │   │   └── BeautifulReportSection.tsx # 報告顯示
+│   │   ├── contexts/
+│   │   │   └── LanguageContext.tsx    # 多語言支援
+│   │   ├── hooks/
+│   │   │   └── use-toast.ts           # Toast 提示
+│   │   ├── pages/
+│   │   │   └── Index.tsx              # 主頁
+│   │   ├── utils/
+│   │   │   ├── api.ts                 # API 調用
+│   │   │   └── pdfService.ts          # PDF 生成
+│   │   ├── App.tsx
+│   │   └── index. css
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   └── package.json
+│
+├── backend/                           # FastAPI 後端
 │   ├── app/
 │   │   ├── __init__.py
-│   │   ├── main.py           # FastAPI 主程式
+│   │   ├── main.py                    # FastAPI 主程式
 │   │   ├── routes/
-│   │   │   └── contract.py   # API 路由
+│   │   │   └── contract.py            # 契約分析 API 路由
 │   │   ├── services/
-│   │   │   ├── ocr_service.py      # OCR 服務
-│   │   │   └── analysis_service.py # 呼叫 AI 模組
+│   │   │   ├── ocr_service. py         # OCR 文字提取
+│   │   │   └── analysis_service.py    # AI 分析服務
 │   │   └── utils/
-│   │       └── file_handler.py
-│   ├── uploads/          # 暫存上傳檔案
-│   ├── contracts/        # 提取的文字檔
-│   ├── reports/          # 生成的報告
+│   │       └── file_handler.py        # 檔案操作
+│   ├── uploads/                       # 上傳檔案暫存
+│   ├── contracts/                     # 提取的文字檔
+│   ├── reports/                       # 生成的報告
 │   ├── requirements.txt
-│   └── . env
-├── AI/                   # 🎯 AI 分析模組（獨立）
-│   ├── law_main.py       # 你的分析引擎
-│   ├── documents/        # 法規知識庫
-│   ├── contracts/        # AI 讀取契約的地方
-│   ├── lawvector_db/     # 向量資料庫
-│   └── requirements.txt
-└── README.md```
+│   ├── . env
+│   └── venv/                          # Python 虛擬環境
+│
+├── AI/                                # AI 分析模組（獨立）
+│   ├── law_main.py                    # AI 分析主程式
+│   ├── documents/                     # 法規知識庫
+│   ├── contracts/                     # AI 讀取契約的目錄
+│   ├── lawvector_db/                  # 向量資料庫
+│   ├── requirements.txt
+│   └── venv/                          # Python 虛擬環境
+│
+└── README.md
 
-## 建構生產版本
+# 貢獻指南
 
-```bash
-npm run build
-```
-
-建構完成後，生產版本檔案將輸出至 `dist/` 資料夾。
-
-## 部署
-
-建構完成後，可以將 `dist/` 資料夾中的內容部署至任何靜態網站託管服務，例如：
-
-- Vercel
-- Netlify
-- GitHub Pages
-- AWS S3
-- Cloudflare Pages
+歡迎提交 Issue 和 Pull Request！
 
 ## 授權
 
