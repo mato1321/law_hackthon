@@ -40,7 +40,7 @@ class Config:
     
     # 🎯 新增：Gemini API 設定
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-pro")
+    GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash")  # 可設定預設模型名稱
     
     VECTOR_DB_DIR = "lawvector_db"             # 向量庫位置
     TOP_K = 5                                  # 找出幾條相關的
@@ -97,7 +97,7 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
                 max_output_tokens=2048,
                 convert_system_message_to_human=True  # Gemini 需要這個設定
             )
-            print("Gemini API 連接成功\n")
+            print(f"Gemini API 連接成功 (模型: {self.config. GEMINI_MODEL_NAME})\n")
             
         except Exception as e: 
             print(f"載入 Gemini API 失敗: {e}")
@@ -288,26 +288,36 @@ class LaborContractReviewSystem:               # 外籍勞工契約審查
             return {"Failed ": f"{e}"}
         
         review_questions = [          # 構造審查問題(可新增更多角度最多五個)
-            f"""請審查此勞工契約並按以下格式回答：
+            f"""
+                角色設定：
+                你是一位精通台灣《勞動基準法》與《就業服務法》的專業律師，專門負責審查外籍勞工聘僱契約。
 
-                契約內容：
+                任務目標：
+                請仔細審查以下契約內容，找出所有「違法」或「顯著不合理」的條款。針對每一個違規點，必須嚴格依照下列四個步驟進行分析。
+
+                待審查契約：
                 {contract_content}
 
-                請按此格式回答：
+                請依照以下格式輸出（若無違法項目，請回答「本合約符合現行法規」）：
 
-                【違法項目】
-                - 項目1：說明
-                - 項目2：說明
+                ---
+                【違規項目 1】
+                1. 違法條款原文：(請直接複製合約中違法的那一句話)
+                2. 違反法規：(請精確指出法條，例如：違反《就業服務法》第57條第8款)
+                3. 違法原因：(請簡述為何違法，例如：雇主不得非法扣留受僱人之護照或居留證)
+                4. 修改建議：(請撰寫一段合法的替代條文，或註明「應直接刪除」)
 
-                【建議修改】
-                - 建議1
-                - 建議2
+                【違規項目 2】
+                1. 違法條款原文：...
+                2. 違反法規：...
+                3. 違法原因：...
+                4. 修改建議：...
+                ---
 
-                【參考法條】
-                - 法條1
-                - 法條2
-
-                只回答上述格式，簡短扼要。
+                注意事項：
+                1. 請特別檢查「扣留證件」、「指派許可外工作」、「薪資低於基本工資(NT$28,590)」、「超時工作」及「不法扣款」等項目。
+                2. 法律引用必須精確，不要模糊帶過。
+                3. 修改建議必須符合台灣現行法律標準。
             """
         ]
         results = {
