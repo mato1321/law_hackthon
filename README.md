@@ -6,6 +6,10 @@
 
 FLAS 是一個Web 應用，專門用於分析外籍勞工聘僱契約並檢查其法規符合度。結合 OCR、AI 和向量資料庫技術，為用戶提供詳細的契約審查報告。
 
+---
+[YouTube Video](https://youtu.be/FaaZkt3VGoc)
+---
+
 ### 主要功能
 
 **契約文件上傳**    - 支援 PDF、JPG、PNG 格式  
